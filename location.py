@@ -59,7 +59,9 @@ Example usage, in different terminal windows:
   
   python location.py localhost:9901 9902
   
-  ... etc. ...
+  python gen-py/locator/Locator-remote -h localhost:9900 get_all
+  
+... etc. ...
 '''
 
 class NodeNotFound(Thrift.TException):
