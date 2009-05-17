@@ -1,8 +1,3 @@
-/*
-locator.thrift
-
-Created by Adam T. Lindsay on 2009-05-15.
-
 The MIT License
 
 Copyright (c) 2009 Adam T. Lindsay.
@@ -24,19 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-*/
-
-struct Location {
- 1: string address,
- 2: i16 port,
-}
-
-service Locator {
- list<Location> join    (1:Location location)
- void           remove  (1:Location location, 2:list<Location> authorities)
- void           add     (1:Location location, 2:list<Location> authorities)
- list<Location> get_all ()
- Location       get_node(1:string key)
- void           ping    ()
- void           debug   ()
-}
