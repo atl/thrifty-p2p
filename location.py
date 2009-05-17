@@ -66,6 +66,7 @@ class NodeNotFound(Thrift.TException):
     def __init__(self, location, message=None):
         self.location = location
         self.message = message
+    
 
 def loc2str(location):
     "Give the canonical string representation"
@@ -107,7 +108,6 @@ class LocatorHandler(Locator.Iface):
             raise socket.error(43, 'Address already in use')
         except NodeNotFound:
             pass
-        
     
     @property
     def here(self):
@@ -126,7 +126,7 @@ class LocatorHandler(Locator.Iface):
         """
         self.add(location, [self.location])
         return self.get_all()
-
+    
     def remove(self, location, authorities):
         """
         Parameters:
@@ -148,7 +148,7 @@ class LocatorHandler(Locator.Iface):
                 # lazy invalidation
                 self.remove(tx.location, map(str2loc, self.ring.nodes))
         print "removed %s:%d" % (location.address, location.port)
-
+    
     def add(self, location, authorities):
         """
         Parameters:
@@ -170,16 +170,16 @@ class LocatorHandler(Locator.Iface):
                 self.remove(tx.location, map(str2loc, self.ring.nodes))
         self.ring.append(loc2str(location))
         print "added %s:%d" % (location.address, location.port)
-        
+    
     def get_all(self):
         return map(str2loc, self.ring.nodes)
-
+    
     def get_node(self, key):
         return self.ring.get_node(key)
     
     def ping(self):
         print 'ping()'
-        
+    
     def debug(self):
         a = "self.location: %r\n" % self.location
         a += "self.ring.nodes:\n%r\n" % self.ring.nodes
@@ -220,3 +220,4 @@ if __name__ == '__main__':
         for node in select_peers(handler.ring.nodes):
             remote_call(str2loc(node), 'remove', handler.location, [handler.location])
     print 'done.'
+
