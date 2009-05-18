@@ -39,11 +39,27 @@ from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
 from locator.ttypes import Location
-#from locator import Locator
-import location
 from diststore import Store
+from diststore.ttypes import *
+import location
 
 DEFAULTPORT = 9900
+
+usage = '''
+  python %s [[peer] port]
+
+Starts a distributed key-value storage node on the designated port
+and contacting the designated peer. In the absence of these two, it 
+attempts to autodiscover an open port and a peer on localhost, working
+from the default port, %d.
+
+After auto-joining, a node will receive key-value pairs from its 
+neighbors. When exiting cleanly (e.g., with a KeyboardInterrupt), the
+node hands off all its items to the appropriate neighbors.
+
+Usage can be obtained with -h or --help as the first argument.
+''' % (sys.argv[0], DEFAULTPORT)
+
 
 def remote_call(destination, method, *args):
     transport = TSocket.TSocket(destination.address, destination.port)
@@ -102,15 +118,42 @@ class StoreHandler(location.LocatorHandler):
         'Make it quiet for the example'
         pass
     
-    # def add(self, loc, authorities):
-    #     location.LocatorHandler.add(self, loc, authorities)
-    #     locstr = location.loc2str(loc)
-    #     for key, value in self.store.items(): 
-    #         if location.loc2str(self.get_node(a)) == locstr:
-    #             try:
-    #                 remote_call(loc, 'put', key, value)
-    #             except location.NodeNotFound, tx:
-    #                 pass
+    def join(self, location):
+        """
+        Parameters:
+         - location
+        """
+        store = self.add(location, [self.location])
+        return StarterPackage(self.get_all(), store)
+    
+    def add(self, loc, authorities):
+        """
+        Parameters:
+         - location
+         - authorities
+        """
+        key = location.loc2str(loc)
+        store = dict()
+        self.addnews[key].add(self.here)
+        self.addnews[key].update(map(location.loc2str, authorities))
+        self.removenews[key] = set()
+        destinations = location.select_peers(self.ring.nodes.difference(self.addnews[key]))
+        self.addnews[key].update(destinations)        
+        for destination in destinations:
+            try:
+                store.update(remote_call(location.str2loc(destination), 
+                    'add', loc, map(location.str2loc, self.addnews[key])))
+            except location.NodeNotFound, tx:
+                self.remove(tx.location, map(location.str2loc, self.ring.nodes))
+        locstr = location.loc2str(loc)
+        self.ring.append(locstr)
+        for key, value in self.store.items():
+            if location.loc2str(self.get_node(key)) == locstr:
+                store.update([(key, value)])
+                del self.store[key] 
+                print 'dropped %s' % key
+        print "added %s:%d" % (loc.address, loc.port)
+        return store
     
     def debug(self):
         a = "self.location: %r\n" % self.location
@@ -118,13 +161,26 @@ class StoreHandler(location.LocatorHandler):
         a += "self.store:\n%r\n" % self.store
         print a
     
+    def local_join(self):
+        if self.peer:
+            starter = remote_call(self.peer, 'join', self.location)
+            if starter.nodes:
+                self.ring.extend(map(location.loc2str, starter.nodes))
+            print 'Joining the network...'
+            self.store.update(starter.store)
+            for key in self.store.keys():
+                print "received %s" % key
+        else:
+            self.ring.append(self.here)
+            print 'Initiating the network...'
+    
     def cleanup(self):
         self.ring.remove(self.here)
         for dest in location.select_peers(self.ring.nodes):
             try:
                 remote_call(location.str2loc(dest), 'remove', self.location, [self.location])
             except location.NodeNotFound, tx:
-                self.ring.remove(loc2str(tx.location))            
+                self.ring.remove(location.loc2str(tx.location))            
         for key, value in ((a, b) for (a, b) in self.store.items() if b):
             dest = self.get_node(key)
             try:
@@ -133,7 +189,6 @@ class StoreHandler(location.LocatorHandler):
                 pass
     
 
-#
 def main(inputargs):
     handler = StoreHandler(**inputargs)
     processor = Store.Processor(handler)
@@ -143,7 +198,6 @@ def main(inputargs):
     server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
     
     handler.local_join()
-    
     print 'Starting the server at %s...' % (handler.here)
     try:
         server.serve()
@@ -154,9 +208,12 @@ def main(inputargs):
 if __name__ == '__main__':
     inputargs = {}
     try:
+        if '-h' in sys.argv[1]:
+            print usage
+            sys.exit()
         inputargs['port'] = int(sys.argv[-1])
         inputargs['peer'] = location.str2loc(sys.argv[-2])
-    except:
+    except StandardError:
         pass
     if 'port' not in inputargs:
         loc = location.ping_until_not_found(Location('localhost', DEFAULTPORT), 25)

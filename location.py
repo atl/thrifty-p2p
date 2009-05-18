@@ -197,7 +197,10 @@ class LocatorHandler(Locator.Iface):
         return map(str2loc, self.ring.nodes)
     
     def get_node(self, key):
-        return str2loc(self.ring.get_node(key))
+        if self.ring.nodes:
+            return str2loc(self.ring.get_node(key))
+        else:
+            return Location('',0)
     
     def ping(self):
         print 'ping()'

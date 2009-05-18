@@ -23,6 +23,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Functions:'
   print '  string get(string key)'
   print '  void put(string key, string value)'
+  print '  StarterPackage join(Location location)'
+  print '   add(Location location,  authorities)'
   print ''
   sys.exit(0)
 
@@ -82,5 +84,17 @@ elif cmd == 'put':
     print 'put requires 2 args'
     sys.exit(1)
   pp.pprint(client.put(args[0],args[1],))
+
+elif cmd == 'join':
+  if len(args) != 1:
+    print 'join requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.join(eval(args[0]),))
+
+elif cmd == 'add':
+  if len(args) != 2:
+    print 'add requires 2 args'
+    sys.exit(1)
+  pp.pprint(client.add(eval(args[0]),eval(args[1]),))
 
 transport.close()

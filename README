@@ -42,3 +42,35 @@ as little as possible with node lookup. This is the simplest thing that
 I came up with that sort-of works: a flat peer-to-peer network with each
 node keeping up with the state of all the nodes as well as it can. This
 necessarily limits the ring's ability to scale beyond dozens of nodes.
+
+== diststore ==
+
+Diststore is an example application that can be layered atop the 
+thrifty-p2p location service. It's a toy distributed key-value store,
+like all the kids are doing these days. It makes no attempt to optimize
+for large scales, so don't get too excited about deploying this anywhere
+real. 
+
+Although diststore.thrift uses locator.thrift for a lot of its interfaces,
+the implementation overloads many of the base methods. Let's hope it ends
+up an informative example for either one of us. 
+
+Example usage, run this in a couple terminal windows:
+  python storeserver.py
+  
+Then in another window start populating the store:
+  python storeput.py a apple
+  python storeput.py b banana
+  python storeput.py c crayon
+  python storeput.py d dinosaur
+
+You can then query the store:
+  python storeget.py c
+  
+or start a new server, and see how a minimum of the existing keys 
+redistribute themselves:
+  python storeserver.py
+  
+or even stop a server with ctrl-C or a `kill -INT` signal and see 
+how the server hands its items off gracefully. However, the system 
+is not robust to any more aggressive termination: keys will go missing.
