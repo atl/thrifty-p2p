@@ -33,7 +33,7 @@
 """
 
 # Pretty radically changed by atl on 2009.04.28:
-# added append/extend/remove methods
+# added append/extend/remove methods (bugfix 2009.05.18)
 # made nodes a set to accommodate that more easily/naturally
 #
 # __getindex__() to support dict-like access::
@@ -107,6 +107,8 @@ class HashRing(object):
 
     def remove(self, item):
         self.nodes.discard(item)
+        self._sorted_keys = []
+        self.ring = dict()
         self._generate_circle()
     
     def __getitem__(self, item):

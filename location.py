@@ -212,7 +212,10 @@ class LocatorHandler(Locator.Iface):
     def cleanup(self):
         self.ring.remove(self.here)
         for node in select_peers(self.ring.nodes):
-            remote_call(str2loc(node), 'remove', self.location, [self.location])
+            try:
+                remote_call(str2loc(node), 'remove', self.location, [self.location])
+            except NodeNotFound, tx:
+                pass
     
     def local_join(self):
         if self.peer:

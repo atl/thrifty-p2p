@@ -68,7 +68,9 @@ class StoreHandler(location.LocatorHandler):
         Parameters:
          - key
         """
+        print self.ring.nodes
         dest = self.get_node(key)
+        print dest
         if location.loc2str(dest) == self.here:
             if key in self.store:
                 print 'found %s' % key
@@ -104,6 +106,20 @@ class StoreHandler(location.LocatorHandler):
         a += "self.store:\n%r\n" % self.store
         print a
     
+    def cleanup(self):
+        self.ring.remove(self.here)
+        for dest in location.select_peers(self.ring.nodes):
+            try:
+                remote_call(location.str2loc(dest), 'remove', self.location, [self.location])
+            except location.NodeNotFound, tx:
+                self.ring.remove(loc2str(tx.location))            
+        for key, value in ((a, b) for (a, b) in self.store.items() if b):
+            dest = self.get_node(key)
+            try:
+                remote_call(dest, 'put', key, value)
+            except location.NodeNotFound, tx:
+                pass
+    
 
 #
 def main(inputargs):
@@ -133,7 +149,7 @@ if __name__ == '__main__':
     if 'port' not in inputargs:
         loc = location.ping_until_not_found(Location('localhost', DEFAULTPORT), 25)
         inputargs['port'] = loc.port
-    if 'peer' not in inputargs and inputargs['port'] != DEFAULTPORT:
+    if 'peer' not in inputargs:
         try:
             loc = location.ping_until_found(Location('localhost', DEFAULTPORT))
             inputargs['peer'] = loc
