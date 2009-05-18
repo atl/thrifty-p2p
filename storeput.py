@@ -35,6 +35,13 @@ from locator.ttypes import Location
 from storeserver import remote_call, DEFAULTPORT
 from location import ping_until_found, loc2str
 
+usage = '''
+  python storeput.py <key> <value>
+
+Looks for a storage node on the localhost starting from 
+the default port. Sends the remote command there, which 
+gets sent out to the actual node that has it.
+'''
 if __name__ == '__main__':
     try:
         key = sys.argv[1]

@@ -197,7 +197,7 @@ class LocatorHandler(Locator.Iface):
         return map(str2loc, self.ring.nodes)
     
     def get_node(self, key):
-        return self.ring.get_node(key)
+        return str2loc(self.ring.get_node(key))
     
     def ping(self):
         print 'ping()'
@@ -209,6 +209,22 @@ class LocatorHandler(Locator.Iface):
         a += "self.removenews:\n%r\n" % self.removenews
         print a
     
+    def cleanup(self):
+        self.ring.remove(self.here)
+        for node in select_peers(self.ring.nodes):
+            remote_call(str2loc(node), 'remove', self.location, [self.location])
+    
+    def local_join(self):
+        if self.peer:
+            nodes = remote_call(self.peer, 'join', self.location)
+            if nodes:
+                self.ring.extend(map(loc2str, nodes))
+            print 'Joining the network...'
+        else:
+            self.ring.append(self.here)
+            print 'Initiating the network...'
+        
+    
 
 def main(inputargs):
     handler = LocatorHandler(**inputargs)
@@ -218,23 +234,13 @@ def main(inputargs):
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
     server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
     
-    if handler.peer:
-        nodes = remote_call(handler.peer, 'join', handler.location)
-        if nodes:
-            handler.ring.extend(map(loc2str, nodes))
-        print 'Joining the network...'
-    else:
-        handler.ring.append(handler.here)
-        print 'Initiating the network...'
+    handler.local_join()
     
     print 'Starting the server at %s...' % (handler.here)
     try:
         server.serve()
-    
     finally:
-        handler.ring.remove(handler.here)
-        for node in select_peers(handler.ring.nodes):
-            remote_call(str2loc(node), 'remove', handler.location, [handler.location])
+        handler.cleanup()
     print 'done.'
 
 if __name__ == '__main__':

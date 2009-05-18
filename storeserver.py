@@ -69,13 +69,17 @@ class StoreHandler(location.LocatorHandler):
          - key
         """
         dest = self.get_node(key)
-        if dest == self.here:
+        if location.loc2str(dest) == self.here:
             if key in self.store:
                 print 'found %s' % key
             return self.store[key]
         else:
-            return remote_call(location.str2loc(dest), 'get', key)
-    
+            try:
+                return remote_call(dest, 'get', key)
+            except location.NodeNotFound, tx:
+                self.remove(tx.location, map(location.str2loc, self.ring.nodes))
+                return ''
+        
     def put(self, key, value):
         """
         Parameters:
@@ -83,12 +87,16 @@ class StoreHandler(location.LocatorHandler):
          - value
         """
         dest = self.get_node(key)
-        if dest == self.here:
+        if location.loc2str(dest) == self.here:
             print 'received %s' % key
             self.store[key] = value
             return
         else:
-            return remote_call(location.str2loc(dest), 'put', key, value)
+            try:
+                return remote_call(dest, 'put', key, value)
+            except location.NodeNotFound, tx:
+                self.remove(tx.location, map(location.str2loc, self.ring.nodes))
+                return None
     
     def debug(self):
         a = "self.location: %r\n" % self.location
@@ -106,25 +114,13 @@ def main(inputargs):
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
     server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
     
-    # refactor to LocatorHandler.local_join() ?
-    if handler.peer:
-        nodes = remote_call(handler.peer, 'join', handler.location)
-        if nodes:
-            handler.ring.extend(map(location.loc2str, nodes))
-        print 'Joining the network...'
-    else:
-        handler.ring.append(handler.here)
-        print 'Initiating the network...'
+    handler.local_join()
     
     print 'Starting the server at %s...' % (handler.here)
     try:
         server.serve()
-    
     finally:
-        # refactor to LocatorHandler.cleanup()
-        handler.ring.remove(handler.here)
-        for node in location.select_peers(handler.ring.nodes):
-            remote_call(location.str2loc(node), 'remove', handler.location, [handler.location])
+        handler.cleanup()
     print 'done.'
 
 if __name__ == '__main__':
