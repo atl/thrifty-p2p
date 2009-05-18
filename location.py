@@ -96,6 +96,26 @@ def select_peers(in_set):
     ii = int(sqrt(len(lst)))+1
     return [b for a, b in enumerate(lst) if (a % ii == 0)]
 
+def ping_until_found(location, maximum=10):
+    loc = Location(location.address, location.port)
+    for a in range(maximum):
+        try:
+            remote_call(loc, 'ping')
+            return loc
+        except NodeNotFound:
+            loc.port += 1
+    raise NodeNotFound(loc)
+
+def ping_until_not_found(location, maximum=10):
+    loc = Location(location.address, location.port)
+    for a in range(maximum):
+        try:
+            remote_call(loc, 'ping')
+            loc.port += 1
+        except NodeNotFound:
+            return loc
+    raise NodeNotFound(loc)
+
 class LocatorHandler(Locator.Iface):
     def __init__(self, peer=None, port=9900):
         self.address = socket.gethostbyname(socket.gethostname())
@@ -190,13 +210,7 @@ class LocatorHandler(Locator.Iface):
         print a
     
 
-if __name__ == '__main__':
-    inputargs = {}
-    try:
-        inputargs['port'] = int(sys.argv[-1])
-        inputargs['peer'] = str2loc(sys.argv[-2])
-    except:
-        pass
+def main(inputargs):
     handler = LocatorHandler(**inputargs)
     processor = Locator.Processor(handler)
     transport = TSocket.TServerSocket(handler.port)
@@ -222,4 +236,17 @@ if __name__ == '__main__':
         for node in select_peers(handler.ring.nodes):
             remote_call(str2loc(node), 'remove', handler.location, [handler.location])
     print 'done.'
+
+if __name__ == '__main__':
+    inputargs = {}
+    try:
+        inputargs['port'] = int(sys.argv[-1])
+        inputargs['peer'] = str2loc(sys.argv[-2])
+    except:
+        pass
+    if 'port' not in inputargs:
+        loc = ping_until_not_found(Location('localhost', 9900))
+        inputargs['port'] = loc.port
+    main(inputargs)
+
 
