@@ -68,9 +68,7 @@ class StoreHandler(location.LocatorHandler):
         Parameters:
          - key
         """
-        print self.ring.nodes
         dest = self.get_node(key)
-        print dest
         if location.loc2str(dest) == self.here:
             if key in self.store:
                 print 'found %s' % key
@@ -99,6 +97,20 @@ class StoreHandler(location.LocatorHandler):
             except location.NodeNotFound, tx:
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
                 return None
+    
+    def ping(self):
+        'Make it quiet for the example'
+        pass
+    
+    # def add(self, loc, authorities):
+    #     location.LocatorHandler.add(self, loc, authorities)
+    #     locstr = location.loc2str(loc)
+    #     for key, value in self.store.items(): 
+    #         if location.loc2str(self.get_node(a)) == locstr:
+    #             try:
+    #                 remote_call(loc, 'put', key, value)
+    #             except location.NodeNotFound, tx:
+    #                 pass
     
     def debug(self):
         a = "self.location: %r\n" % self.location
