@@ -33,7 +33,7 @@ sys.path.append('gen-py')
 
 from locator.ttypes import Location
 from storeserver import remote_call, DEFAULTPORT
-from location import ping_until_found, loc2str
+from location import ping_until_found, loc2str, NodeNotFound
 
 usage = '''
   python storeget.py <key>
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         sys.exit()
     try:
         loc = ping_until_found(Location('localhost', DEFAULTPORT))
-    except location.NodeNotFound:
+    except NodeNotFound:
         print 'No host autodiscovered.'
         sys.exit()
     value = remote_call(loc, 'get', key)
