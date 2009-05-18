@@ -45,6 +45,19 @@ from diststore import Store
 
 DEFAULTPORT = 9900
 
+def remote_call(destination, method, *args):
+    transport = TSocket.TSocket(destination.address, destination.port)
+    transport = TTransport.TBufferedTransport(transport)
+    protocol = TBinaryProtocol.TBinaryProtocol(transport)
+    client = Store.Client(protocol)
+    try:
+        transport.open()
+    except Thrift.TException, tx:
+        raise location.NodeNotFound(destination)
+    out = getattr(client, method)(*args)
+    transport.close()
+    return out
+
 class StoreHandler(location.LocatorHandler):
     def __init__(self, peer=None, port=9900):
         location.LocatorHandler.__init__(self, peer, port)
@@ -57,9 +70,11 @@ class StoreHandler(location.LocatorHandler):
         """
         dest = self.get_node(key)
         if dest == self.here:
+            if key in self.store:
+                print 'found %s' % key
             return self.store[key]
         else:
-            location.remote_call(location.str2loc(dest), 'get', key)
+            return remote_call(location.str2loc(dest), 'get', key)
     
     def put(self, key, value):
         """
@@ -69,10 +84,17 @@ class StoreHandler(location.LocatorHandler):
         """
         dest = self.get_node(key)
         if dest == self.here:
+            print 'received %s' % key
             self.store[key] = value
             return
         else:
-            location.remote_call(location.str2loc(dest), 'put', key, value)
+            return remote_call(location.str2loc(dest), 'put', key, value)
+    
+    def debug(self):
+        a = "self.location: %r\n" % self.location
+        a += "self.ring.nodes:\n%r\n" % self.ring.nodes
+        a += "self.store:\n%r\n" % self.store
+        print a
     
 
 #
@@ -86,7 +108,7 @@ def main(inputargs):
     
     # refactor to LocatorHandler.local_join() ?
     if handler.peer:
-        nodes = location.remote_call(handler.peer, 'join', handler.location)
+        nodes = remote_call(handler.peer, 'join', handler.location)
         if nodes:
             handler.ring.extend(map(location.loc2str, nodes))
         print 'Joining the network...'
@@ -102,7 +124,7 @@ def main(inputargs):
         # refactor to LocatorHandler.cleanup()
         handler.ring.remove(handler.here)
         for node in location.select_peers(handler.ring.nodes):
-            location.remote_call(location.str2loc(node), 'remove', handler.location, [handler.location])
+            remote_call(location.str2loc(node), 'remove', handler.location, [handler.location])
     print 'done.'
 
 if __name__ == '__main__':
@@ -113,7 +135,7 @@ if __name__ == '__main__':
     except:
         pass
     if 'port' not in inputargs:
-        loc = location.ping_until_not_found(Location('localhost', DEFAULTPORT))
+        loc = location.ping_until_not_found(Location('localhost', DEFAULTPORT), 25)
         inputargs['port'] = loc.port
     if 'peer' not in inputargs and inputargs['port'] != DEFAULTPORT:
         try:
