@@ -55,4 +55,3 @@ if __name__ == '__main__':
         print 'No host autodiscovered.'
         sys.exit()
     remote_call(loc, 'put', key, value)
-    print "put %s, %s" % (key, value)

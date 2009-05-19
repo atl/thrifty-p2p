@@ -247,9 +247,12 @@ def main(inputargs):
 if __name__ == '__main__':
     inputargs = {}
     try:
+        if '-h' in sys.argv[1]:
+            print usage
+            sys.exit()
         inputargs['port'] = int(sys.argv[-1])
         inputargs['peer'] = str2loc(sys.argv[-2])
-    except:
+    except StandardError:
         pass
     if 'port' not in inputargs:
         loc = ping_until_not_found(Location('localhost', DEFAULTPORT), 40)
