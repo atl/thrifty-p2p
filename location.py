@@ -96,8 +96,7 @@ def remote_call(destination, method, *args):
 
 def select_peers(in_set):
     lst = sorted(in_set)
-    ii = int(sqrt(len(lst)))+1
-    return [b for a, b in enumerate(lst) if (a % ii == 0)]
+    return lst
 
 def ping_until_found(location, maximum=10):
     loc = Location(location.address, location.port)
@@ -125,8 +124,6 @@ class LocatorHandler(Locator.Iface):
         self.port = port
         self.peer = peer
         self.ring = HashRing()
-        self.addnews = defaultdict(set)
-        self.removenews = defaultdict(set)
         try:
             remote_call(self.location, 'ping')
             print 'Uh-oh. Our location responded to a ping!'
@@ -165,6 +162,7 @@ class LocatorHandler(Locator.Iface):
         for destination in destinations:
             try:
                 remote_call(str2loc(destination), 'remove', location, authorities)
+                break
             except NodeNotFound, tx:
                 # enter all nodes as authorities to avoid race conditions
                 # lazy invalidation
@@ -183,6 +181,7 @@ class LocatorHandler(Locator.Iface):
         for destination in destinations:
             try:
                 remote_call(str2loc(destination), 'add', location, authorities)
+                break
             except NodeNotFound, tx:
                 # enter all nodes as authorities to avoid race conditions
                 # lazy invalidation
@@ -205,8 +204,6 @@ class LocatorHandler(Locator.Iface):
     def debug(self):
         a = "self.location: %r\n" % self.location
         a += "self.ring.nodes:\n%r\n" % self.ring.nodes
-        a += "self.addnews:\n%r\n" % self.addnews
-        a += "self.removenews:\n%r\n" % self.removenews
         print a
     
     def cleanup(self):
@@ -214,6 +211,7 @@ class LocatorHandler(Locator.Iface):
         for node in select_peers(self.ring.nodes):
             try:
                 remote_call(str2loc(node), 'remove', self.location, [self.location])
+                break
             except NodeNotFound, tx:
                 pass
     

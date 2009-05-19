@@ -134,15 +134,12 @@ class StoreHandler(location.LocatorHandler):
         """
         key = location.loc2str(loc)
         store = dict()
-        self.addnews[key].add(self.here)
-        self.addnews[key].update(map(location.loc2str, authorities))
-        self.removenews[key] = set()
-        destinations = location.select_peers(self.ring.nodes.difference(self.addnews[key]))
-        self.addnews[key].update(destinations)        
+        authorities.append(self.location)
+        destinations = location.select_peers(self.ring.nodes.difference(map(location.loc2str,authorities)))
         for destination in destinations:
             try:
-                store.update(remote_call(location.str2loc(destination), 
-                    'add', loc, map(location.str2loc, self.addnews[key])))
+                store.update(remote_call(location.str2loc(destination), 'add', loc, authorities))
+                break
             except location.NodeNotFound, tx:
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
         locstr = location.loc2str(loc)
@@ -179,6 +176,7 @@ class StoreHandler(location.LocatorHandler):
         for dest in location.select_peers(self.ring.nodes):
             try:
                 remote_call(location.str2loc(dest), 'remove', self.location, [self.location])
+                break
             except location.NodeNotFound, tx:
                 self.ring.remove(location.loc2str(tx.location))            
         for key, value in ((a, b) for (a, b) in self.store.items() if b):
