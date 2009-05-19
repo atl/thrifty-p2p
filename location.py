@@ -44,25 +44,28 @@ from locator.ttypes import *
 from locator import Locator
 from hash_ring import HashRing
 
+DEFAULTPORT = 9900
+
 usage = '''
-  python location.py [[peer_node] port_num]
+  python %s [[peer_node] port_num]
 
 Initiates and/or joins a simple peer-to-peer network.
-Default port_num is 9900.
+Default port_num is %d.
 Absent a peer_node (which is the peer initially contacted for
 joining the network), it initiates a network.
 
 Example usage, in different terminal windows:
-  python location.py
+  python %s
   
-  python location.py localhost:9900 9901
+  python %s localhost:%d 9901
   
-  python location.py localhost:9901 9902
+  python %s localhost:9901 9902
   
-  python gen-py/locator/Locator-remote -h localhost:9900 get_all
+  python gen-py/locator/Locator-remote -h localhost:%d get_all
   
 ... etc. ...
-'''
+''' % (sys.argv[0], DEFAULTPORT, sys.argv[0], sys.argv[0], 
+       DEFAULTPORT, sys.argv[0], DEFAULTPORT)
 
 class NodeNotFound(Thrift.TException):
     def __init__(self, location, message=None):
@@ -157,14 +160,11 @@ class LocatorHandler(Locator.Iface):
         """
         key = loc2str(location)
         self.ring.remove(loc2str(location))
-        self.removenews[key].add(self.here)
-        self.removenews[key].update(map(loc2str, authorities))
-        self.addnews[key] = set()
-        destinations = select_peers(self.ring.nodes.difference(self.removenews[key]))
-        self.removenews[key].update(destinations)        
+        authorities.append(self.location)
+        destinations = select_peers(self.ring.nodes.difference(map(loc2str,authorities)))
         for destination in destinations:
             try:
-                remote_call(str2loc(destination), 'remove', location, map(str2loc, self.removenews[key]))
+                remote_call(str2loc(destination), 'remove', location, authorities)
             except NodeNotFound, tx:
                 # enter all nodes as authorities to avoid race conditions
                 # lazy invalidation
@@ -178,14 +178,11 @@ class LocatorHandler(Locator.Iface):
          - authorities
         """
         key = loc2str(location)
-        self.addnews[key].add(self.here)
-        self.addnews[key].update(map(loc2str, authorities))
-        self.removenews[key] = set()
-        destinations = select_peers(self.ring.nodes.difference(self.addnews[key]))
-        self.addnews[key].update(destinations)        
+        authorities.append(self.location)
+        destinations = select_peers(self.ring.nodes.difference(map(loc2str,authorities)))
         for destination in destinations:
             try:
-                remote_call(str2loc(destination), 'add', location, map(str2loc, self.addnews[key]))
+                remote_call(str2loc(destination), 'add', location, authorities)
             except NodeNotFound, tx:
                 # enter all nodes as authorities to avoid race conditions
                 # lazy invalidation
@@ -257,8 +254,13 @@ if __name__ == '__main__':
     except:
         pass
     if 'port' not in inputargs:
-        loc = ping_until_not_found(Location('localhost', 9900))
+        loc = ping_until_not_found(Location('localhost', DEFAULTPORT), 40)
         inputargs['port'] = loc.port
+    if 'peer' not in inputargs:
+        try:
+            inputargs['peer'] = ping_until_found(Location('localhost', DEFAULTPORT))
+        except NodeNotFound:
+            print 'No peer autodiscovered.'
     main(inputargs)
 
 

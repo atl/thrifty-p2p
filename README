@@ -45,7 +45,7 @@ necessarily limits the ring's ability to scale beyond dozens of nodes.
 
 == diststore ==
 
-Diststore is an example application that can be layered atop the 
+Diststore is an example of an application that can be layered atop the 
 thrifty-p2p location service. It's a toy distributed key-value store,
 like all the kids are doing these days. It makes no attempt to optimize
 for large scales, so don't get too excited about deploying this anywhere
