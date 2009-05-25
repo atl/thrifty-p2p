@@ -100,7 +100,6 @@ class Client(Iface):
      - authorities
     """
     self.send_remove(location, authorities)
-    self.recv_remove()
 
   def send_remove(self, location, authorities):
     self._oprot.writeMessageBegin('remove', TMessageType.CALL, self._seqid)
@@ -110,19 +109,6 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
-
-  def recv_remove(self, ):
-    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
-    if mtype == TMessageType.EXCEPTION:
-      x = TApplicationException()
-      x.read(self._iprot)
-      self._iprot.readMessageEnd()
-      raise x
-    result = remove_result()
-    result.read(self._iprot)
-    self._iprot.readMessageEnd()
-    return
-
   def add(self, location, authorities):
     """
     Parameters:
@@ -130,7 +116,6 @@ class Client(Iface):
      - authorities
     """
     self.send_add(location, authorities)
-    self.recv_add()
 
   def send_add(self, location, authorities):
     self._oprot.writeMessageBegin('add', TMessageType.CALL, self._seqid)
@@ -140,19 +125,6 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
-
-  def recv_add(self, ):
-    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
-    if mtype == TMessageType.EXCEPTION:
-      x = TApplicationException()
-      x.read(self._iprot)
-      self._iprot.readMessageEnd()
-      raise x
-    result = add_result()
-    result.read(self._iprot)
-    self._iprot.readMessageEnd()
-    return
-
   def get_all(self, ):
     self.send_get_all()
     return self.recv_get_all()
@@ -210,7 +182,6 @@ class Client(Iface):
 
   def ping(self, ):
     self.send_ping()
-    self.recv_ping()
 
   def send_ping(self, ):
     self._oprot.writeMessageBegin('ping', TMessageType.CALL, self._seqid)
@@ -218,22 +189,8 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
-
-  def recv_ping(self, ):
-    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
-    if mtype == TMessageType.EXCEPTION:
-      x = TApplicationException()
-      x.read(self._iprot)
-      self._iprot.readMessageEnd()
-      raise x
-    result = ping_result()
-    result.read(self._iprot)
-    self._iprot.readMessageEnd()
-    return
-
   def debug(self, ):
     self.send_debug()
-    self.recv_debug()
 
   def send_debug(self, ):
     self._oprot.writeMessageBegin('debug', TMessageType.CALL, self._seqid)
@@ -241,19 +198,6 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
-
-  def recv_debug(self, ):
-    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
-    if mtype == TMessageType.EXCEPTION:
-      x = TApplicationException()
-      x.read(self._iprot)
-      self._iprot.readMessageEnd()
-      raise x
-    result = debug_result()
-    result.read(self._iprot)
-    self._iprot.readMessageEnd()
-    return
-
 
 class Processor(Iface, TProcessor):
   def __init__(self, handler):
@@ -297,23 +241,15 @@ class Processor(Iface, TProcessor):
     args = remove_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = remove_result()
     self._handler.remove(args.location, args.authorities)
-    oprot.writeMessageBegin("remove", TMessageType.REPLY, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
+    return
 
   def process_add(self, seqid, iprot, oprot):
     args = add_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = add_result()
     self._handler.add(args.location, args.authorities)
-    oprot.writeMessageBegin("add", TMessageType.REPLY, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
+    return
 
   def process_get_all(self, seqid, iprot, oprot):
     args = get_all_args()
@@ -341,23 +277,15 @@ class Processor(Iface, TProcessor):
     args = ping_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = ping_result()
     self._handler.ping()
-    oprot.writeMessageBegin("ping", TMessageType.REPLY, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
+    return
 
   def process_debug(self, seqid, iprot, oprot):
     args = debug_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = debug_result()
     self._handler.debug()
-    oprot.writeMessageBegin("debug", TMessageType.REPLY, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
+    return
 
 
 # HELPER FUNCTIONS AND STRUCTURES
@@ -561,44 +489,6 @@ class remove_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class remove_result(object):
-
-  thrift_spec = (
-  )
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('remove_result')
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
 class add_args(object):
   """
   Attributes:
@@ -663,44 +553,6 @@ class add_args(object):
         iter20.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class add_result(object):
-
-  thrift_spec = (
-  )
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('add_result')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -967,44 +819,6 @@ class ping_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class ping_result(object):
-
-  thrift_spec = (
-  )
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('ping_result')
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
 class debug_args(object):
 
   thrift_spec = (
@@ -1029,44 +843,6 @@ class debug_args(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('debug_args')
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class debug_result(object):
-
-  thrift_spec = (
-  )
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('debug_result')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 

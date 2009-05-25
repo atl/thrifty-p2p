@@ -35,7 +35,7 @@ struct StarterPackage {
 
 service Store extends locator.Locator {
  string                 get     (1:string key)
- void                   put     (1:string key, 2:string value)
- StarterPackage         join    (1:locator.Location location)
- map<string, string>    add     (1:locator.Location location, 2:list<locator.Location> authorities)
+ oneway void            put     (1:string key, 2:string value)
+# StarterPackage         join    (1:locator.Location location)
+# map<string, string>    add     (1:locator.Location location, 2:list<locator.Location> authorities)
 }
