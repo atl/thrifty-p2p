@@ -120,6 +120,19 @@ def ping_until_not_found(location, maximum=10):
             return loc
     raise NodeNotFound(loc)
 
+def ping_until_return(location, maximum=10):
+    loc = Location(location.address, location.port)
+    wait = WAITPERIOD
+    for a in range(maximum):
+        try:
+            remote_call(loc, 'ping')
+            return
+        except NodeNotFound:
+            sleep(wait)
+            wait *= 2
+            print wait
+    raise NodeNotFound(loc)
+    
 class LocatorHandler(Locator.Iface):
     def __init__(self, peer=None, port=9900):
         self.address = socket.gethostbyname(socket.gethostname())
@@ -149,7 +162,7 @@ class LocatorHandler(Locator.Iface):
          - location
         """
         self.add(location, [self.location])
-        sleep(WAITPERIOD)
+        ping_until_return(location)
         items = self.ring.nodes.difference([loc2str(location)])
         for item in items:
             remote_call(location, 'add', str2loc(item), map(str2loc, self.ring.nodes))

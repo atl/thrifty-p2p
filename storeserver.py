@@ -145,7 +145,8 @@ class StoreHandler(location.LocatorHandler):
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
         locstr = location.loc2str(loc)
         self.ring.append(locstr)
-        sleep(2*WAITPERIOD)
+        #location.ping_until_return(loc)
+        sleep(WAITPERIOD)
         for key, value in self.store.items():
             if location.loc2str(self.get_node(key)) == locstr:
                 remote_call(loc, 'put', key, value)
@@ -178,9 +179,12 @@ class StoreHandler(location.LocatorHandler):
         for key, value in ((a, b) for (a, b) in self.store.items() if b):
             dest = self.get_node(key)
             try:
+                #location.ping_until_return(dest, 3)
+                remote_call(dest, 'remove', self.location, [self.location])
                 sleep(WAITPERIOD)
                 remote_call(dest, 'put', key, value)
             except location.NodeNotFound, tx:
+                print "not found"
                 pass
     
 
