@@ -33,6 +33,7 @@ sys.path.append('gen-py')
 import socket 
 from collections import defaultdict
 from math import sqrt
+from time import sleep
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -45,6 +46,7 @@ from locator import Locator
 from hash_ring import HashRing
 
 DEFAULTPORT = 9900
+WAITPERIOD = 0.01
 
 usage = '''
   python %s [[peer_node] port_num]
@@ -147,7 +149,10 @@ class LocatorHandler(Locator.Iface):
          - location
         """
         self.add(location, [self.location])
-        return self.get_all()
+        sleep(WAITPERIOD)
+        items = self.ring.nodes.difference([loc2str(location)])
+        for item in items:
+            remote_call(location, 'add', str2loc(item), map(str2loc, self.ring.nodes))
     
     def remove(self, location, authorities):
         """
@@ -216,13 +221,11 @@ class LocatorHandler(Locator.Iface):
                 pass
     
     def local_join(self):
+        self.ring.append(self.here)
         if self.peer:
-            nodes = remote_call(self.peer, 'join', self.location)
-            if nodes:
-                self.ring.extend(map(loc2str, nodes))
+            remote_call(self.peer, 'join', self.location)
             print 'Joining the network...'
         else:
-            self.ring.append(self.here)
             print 'Initiating the network...'
         
     

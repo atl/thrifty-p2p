@@ -69,7 +69,6 @@ class Client(Iface):
      - location
     """
     self.send_join(location)
-    return self.recv_join()
 
   def send_join(self, location):
     self._oprot.writeMessageBegin('join', TMessageType.CALL, self._seqid)
@@ -78,21 +77,6 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
-
-  def recv_join(self, ):
-    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
-    if mtype == TMessageType.EXCEPTION:
-      x = TApplicationException()
-      x.read(self._iprot)
-      self._iprot.readMessageEnd()
-      raise x
-    result = join_result()
-    result.read(self._iprot)
-    self._iprot.readMessageEnd()
-    if result.success != None:
-      return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "join failed: unknown result");
-
   def remove(self, location, authorities):
     """
     Parameters:
@@ -182,6 +166,7 @@ class Client(Iface):
 
   def ping(self, ):
     self.send_ping()
+    self.recv_ping()
 
   def send_ping(self, ):
     self._oprot.writeMessageBegin('ping', TMessageType.CALL, self._seqid)
@@ -189,6 +174,19 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
+
+  def recv_ping(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = ping_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    return
+
   def debug(self, ):
     self.send_debug()
 
@@ -230,12 +228,8 @@ class Processor(Iface, TProcessor):
     args = join_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = join_result()
-    result.success = self._handler.join(args.location)
-    oprot.writeMessageBegin("join", TMessageType.REPLY, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
+    self._handler.join(args.location)
+    return
 
   def process_remove(self, seqid, iprot, oprot):
     args = remove_args()
@@ -277,8 +271,12 @@ class Processor(Iface, TProcessor):
     args = ping_args()
     args.read(iprot)
     iprot.readMessageEnd()
+    result = ping_result()
     self._handler.ping()
-    return
+    oprot.writeMessageBegin("ping", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
 
   def process_debug(self, seqid, iprot, oprot):
     args = debug_args()
@@ -347,70 +345,6 @@ class join_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class join_result(object):
-  """
-  Attributes:
-   - success
-  """
-
-  thrift_spec = (
-    (0, TType.LIST, 'success', (TType.STRUCT,(Location, Location.thrift_spec)), None, ), # 0
-  )
-
-  def __init__(self, success=None,):
-    self.success = success
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 0:
-        if ftype == TType.LIST:
-          self.success = []
-          (_etype3, _size0) = iprot.readListBegin()
-          for _i4 in xrange(_size0):
-            _elem5 = Location()
-            _elem5.read(iprot)
-            self.success.append(_elem5)
-          iprot.readListEnd()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('join_result')
-    if self.success != None:
-      oprot.writeFieldBegin('success', TType.LIST, 0)
-      oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter6 in self.success:
-        iter6.write(oprot)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
 class remove_args(object):
   """
   Attributes:
@@ -446,11 +380,11 @@ class remove_args(object):
       elif fid == 2:
         if ftype == TType.LIST:
           self.authorities = []
-          (_etype10, _size7) = iprot.readListBegin()
-          for _i11 in xrange(_size7):
-            _elem12 = Location()
-            _elem12.read(iprot)
-            self.authorities.append(_elem12)
+          (_etype3, _size0) = iprot.readListBegin()
+          for _i4 in xrange(_size0):
+            _elem5 = Location()
+            _elem5.read(iprot)
+            self.authorities.append(_elem5)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -471,8 +405,8 @@ class remove_args(object):
     if self.authorities != None:
       oprot.writeFieldBegin('authorities', TType.LIST, 2)
       oprot.writeListBegin(TType.STRUCT, len(self.authorities))
-      for iter13 in self.authorities:
-        iter13.write(oprot)
+      for iter6 in self.authorities:
+        iter6.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -524,11 +458,11 @@ class add_args(object):
       elif fid == 2:
         if ftype == TType.LIST:
           self.authorities = []
-          (_etype17, _size14) = iprot.readListBegin()
-          for _i18 in xrange(_size14):
-            _elem19 = Location()
-            _elem19.read(iprot)
-            self.authorities.append(_elem19)
+          (_etype10, _size7) = iprot.readListBegin()
+          for _i11 in xrange(_size7):
+            _elem12 = Location()
+            _elem12.read(iprot)
+            self.authorities.append(_elem12)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -549,8 +483,8 @@ class add_args(object):
     if self.authorities != None:
       oprot.writeFieldBegin('authorities', TType.LIST, 2)
       oprot.writeListBegin(TType.STRUCT, len(self.authorities))
-      for iter20 in self.authorities:
-        iter20.write(oprot)
+      for iter13 in self.authorities:
+        iter13.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -630,11 +564,11 @@ class get_all_result(object):
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype24, _size21) = iprot.readListBegin()
-          for _i25 in xrange(_size21):
-            _elem26 = Location()
-            _elem26.read(iprot)
-            self.success.append(_elem26)
+          (_etype17, _size14) = iprot.readListBegin()
+          for _i18 in xrange(_size14):
+            _elem19 = Location()
+            _elem19.read(iprot)
+            self.success.append(_elem19)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -651,8 +585,8 @@ class get_all_result(object):
     if self.success != None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter27 in self.success:
-        iter27.write(oprot)
+      for iter20 in self.success:
+        iter20.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -805,6 +739,44 @@ class ping_args(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('ping_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class ping_result(object):
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('ping_result')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 

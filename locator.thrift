@@ -32,7 +32,7 @@ struct Location {
 }
 
 service Locator {
- list<Location> join    (1:Location location)
+ oneway void    join    (1:Location location)
  oneway void    remove  (1:Location location, 2:list<Location> authorities)
  oneway void    add     (1:Location location, 2:list<Location> authorities)
  list<Location> get_all ()

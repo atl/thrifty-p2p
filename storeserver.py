@@ -31,6 +31,7 @@ THE SOFTWARE.
 import sys
 sys.path.append('gen-py')
 from collections import defaultdict
+from time import sleep
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -44,6 +45,7 @@ from diststore.ttypes import *
 import location
 
 DEFAULTPORT = 9900
+WAITPERIOD = 0.01
 
 usage = '''
   python %s [[peer] port]
@@ -109,22 +111,22 @@ class StoreHandler(location.LocatorHandler):
             return
         else:
             try:
-                return remote_call(dest, 'put', key, value)
+                remote_call(dest, 'put', key, value)
             except location.NodeNotFound, tx:
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
-                return None
+                return
     
     def ping(self):
         'Make it quiet for the example'
         pass
     
-    def join(self, location):
-        """
-        Parameters:
-         - location
-        """
-        store = self.add(location, [self.location])
-        return StarterPackage(self.get_all(), store)
+    # def join(self, location):
+    #     """
+    #     Parameters:
+    #      - location
+    #     """
+    #     store = self.add(location, [self.location])
+    #     return StarterPackage(self.get_all(), store)
     
     def add(self, loc, authorities):
         """
@@ -133,24 +135,23 @@ class StoreHandler(location.LocatorHandler):
          - authorities
         """
         key = location.loc2str(loc)
-        store = dict()
         authorities.append(self.location)
         destinations = location.select_peers(self.ring.nodes.difference(map(location.loc2str,authorities)))
         for destination in destinations:
             try:
-                store.update(remote_call(location.str2loc(destination), 'add', loc, authorities))
+                remote_call(location.str2loc(destination), 'add', loc, authorities)
                 break
             except location.NodeNotFound, tx:
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
         locstr = location.loc2str(loc)
         self.ring.append(locstr)
+        sleep(2*WAITPERIOD)
         for key, value in self.store.items():
             if location.loc2str(self.get_node(key)) == locstr:
-                store.update([(key, value)])
+                remote_call(loc, 'put', key, value)
                 del self.store[key] 
                 print 'dropped %s' % key
         print "added %s:%d" % (loc.address, loc.port)
-        return store
     
     def debug(self):
         a = "self.location: %r\n" % self.location
@@ -158,18 +159,13 @@ class StoreHandler(location.LocatorHandler):
         a += "self.store:\n%r\n" % self.store
         print a
     
-    def local_join(self):
-        if self.peer:
-            starter = remote_call(self.peer, 'join', self.location)
-            if starter.nodes:
-                self.ring.extend(map(location.loc2str, starter.nodes))
-            print 'Joining the network...'
-            self.store.update(starter.store)
-            for key in self.store.keys():
-                print "received %s" % key
-        else:
-            self.ring.append(self.here)
-            print 'Initiating the network...'
+    # def local_join(self):
+    #         if self.peer:
+    #             remote_call(self.peer, 'join', self.location)
+    #             print 'Joining the network...'
+    #         else:
+    #             self.ring.append(self.here)
+    #             print 'Initiating the network...'
     
     def cleanup(self):
         self.ring.remove(self.here)
@@ -182,6 +178,7 @@ class StoreHandler(location.LocatorHandler):
         for key, value in ((a, b) for (a, b) in self.store.items() if b):
             dest = self.get_node(key)
             try:
+                sleep(WAITPERIOD)
                 remote_call(dest, 'put', key, value)
             except location.NodeNotFound, tx:
                 pass

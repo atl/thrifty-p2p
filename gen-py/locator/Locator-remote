@@ -21,7 +21,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '   join(Location location)'
+  print '  void join(Location location)'
   print '  void remove(Location location,  authorities)'
   print '  void add(Location location,  authorities)'
   print '   get_all()'
