@@ -120,14 +120,6 @@ class StoreHandler(location.LocatorHandler):
         'Make it quiet for the example'
         pass
     
-    # def join(self, location):
-    #     """
-    #     Parameters:
-    #      - location
-    #     """
-    #     store = self.add(location, [self.location])
-    #     return StarterPackage(self.get_all(), store)
-    
     def add(self, loc, authorities):
         """
         Parameters:
@@ -145,7 +137,6 @@ class StoreHandler(location.LocatorHandler):
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
         locstr = location.loc2str(loc)
         self.ring.append(locstr)
-        #location.ping_until_return(loc)
         sleep(WAITPERIOD)
         for key, value in self.store.items():
             if location.loc2str(self.get_node(key)) == locstr:
@@ -160,33 +151,30 @@ class StoreHandler(location.LocatorHandler):
         a += "self.store:\n%r\n" % self.store
         print a
     
-    # def local_join(self):
-    #         if self.peer:
-    #             remote_call(self.peer, 'join', self.location)
-    #             print 'Joining the network...'
-    #         else:
-    #             self.ring.append(self.here)
-    #             print 'Initiating the network...'
-    
     def cleanup(self):
         self.ring.remove(self.here)
-        for dest in location.select_peers(self.ring.nodes):
-            try:
-                remote_call(location.str2loc(dest), 'remove', self.location, [self.location])
-                break
-            except location.NodeNotFound, tx:
-                self.ring.remove(location.loc2str(tx.location))            
-        for key, value in ((a, b) for (a, b) in self.store.items() if b):
-            dest = self.get_node(key)
-            try:
-                #location.ping_until_return(dest, 3)
-                remote_call(dest, 'remove', self.location, [self.location])
-                sleep(WAITPERIOD)
-                remote_call(dest, 'put', key, value)
-            except location.NodeNotFound, tx:
-                print "not found"
-                pass
-    
+        informed = set()
+        if self.ring.nodes:
+            for key, value in ((a, b) for (a, b) in self.store.items() if b):
+                dest = self.get_node(key)
+                try:
+                    if location.loc2str(dest) not in informed:
+                        remote_call(dest, 'remove', self.location, [self.location])
+                    remote_call(dest, 'ping')
+                    informed.add(location.loc2str(dest))
+                    remote_call(dest, 'put', key, value)
+                except location.NodeNotFound, tx:
+                    print "not found"
+                    pass
+            if not informed:
+                for dest in location.select_peers(self.ring.nodes):
+                    try:
+                        remote_call(location.str2loc(dest), 'remove', self.location, [self.location])
+                        informed.add(dest)
+                        break
+                    except location.NodeNotFound, tx:
+                        self.ring.remove(location.loc2str(tx.location))            
+        
 
 def main(inputargs):
     handler = StoreHandler(**inputargs)
