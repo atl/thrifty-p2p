@@ -17,9 +17,9 @@ joining the network), the command initiates a network.
 Example usage, in different terminal windows:
   python location.py
   
-  python location.py localhost:9900 9901
+  python location.py --host localhost:9900 --port 9901
   
-  python location.py localhost:9901 9902
+  python location.py -h localhost:9901 -p 9902
   
 ... etc. ...
 
@@ -46,11 +46,11 @@ necessarily limits the ring's ability to scale beyond dozens of nodes.
 
 == diststore ==
 
-Diststore is an example of an application that can be layered atop the 
-thrifty-p2p location service. It's a toy distributed key-value store,
-like all the kids are doing these days. It makes no attempt to optimize
-for large scales, so don't get too excited about deploying this anywhere
-real. 
+Diststore is an example of an application that can be layered atop the
+thrifty-p2p location service. It's a toy version of a distributed key-value
+store, like all the cool kids are doing these days. It makes no attempt to
+optimize for large scales, so don't get too excited about deploying this in
+production. Rather, it's provided for instruction and testing.
 
 Although diststore.thrift uses locator.thrift for a lot of its interfaces,
 the implementation overloads some of the base methods as an illustration 

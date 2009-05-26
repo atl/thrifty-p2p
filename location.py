@@ -173,8 +173,6 @@ class LocatorHandler(Locator.Iface):
         self.add(location, [self.location])
         ping_until_return(location)
         items = self.ring.nodes.difference([loc2str(location)])
-        # for item in items:
-        #     remote_call(location, 'add', str2loc(item), map(str2loc, self.ring.nodes))
     
     def remove(self, location, authorities):
         """
