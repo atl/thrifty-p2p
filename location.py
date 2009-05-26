@@ -34,6 +34,7 @@ import socket
 from collections import defaultdict
 from math import sqrt
 from time import sleep
+from optparse import OptionParser, make_option
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -47,27 +48,35 @@ from hash_ring import HashRing
 
 DEFAULTPORT = 9900
 WAITPERIOD = 0.01
-
 usage = '''
-  python %s [[peer_node] port_num]
-
-Initiates and/or joins a simple peer-to-peer network.
-Default port_num is %d.
-Absent a peer_node (which is the peer initially contacted for
-joining the network), it initiates a network.
+  python %prog [options]
+  
+Initiates or joins a simple peer-to-peer network.
+Absent a PEER (which is the peer initially contacted for
+joining the network), it attempts to autodiscover a
+network running on localhost, and either joins that or
+initiates its own network.
 
 Example usage, in different terminal windows:
-  python %s
-  
-  python %s localhost:%d 9901
-  
-  python %s localhost:9901 9902
-  
-  python gen-py/locator/Locator-remote -h localhost:%d get_all
-  
-... etc. ...
-''' % (sys.argv[0], DEFAULTPORT, sys.argv[0], sys.argv[0], 
-       DEFAULTPORT, sys.argv[0], DEFAULTPORT)
+  python %prog
+  python %prog -h localhost:9900 --port 9902
+... etc. ...'''
+
+option_list = [
+    make_option("-h", "--host", dest="peer",
+                  help="Use PEER as an initial peer",
+                  default=''),
+    make_option("-p", "--port", type="int",
+                  help="Use PORT as the server port [default=9900]",
+                  default=0),
+    make_option("--help", action="help",
+                  help="show this help message and exit"),
+]
+
+parser = OptionParser(usage=usage,
+                        option_list=option_list, 
+                        add_help_option=False,
+                        conflict_handler='resolve')
 
 class NodeNotFound(Thrift.TException):
     def __init__(self, location, message=None):
@@ -262,23 +271,17 @@ def main(inputargs):
     print 'done.'
 
 if __name__ == '__main__':
-    inputargs = {}
-    try:
-        if '-h' in sys.argv[1]:
-            print usage
-            sys.exit()
-        inputargs['port'] = int(sys.argv[-1])
-        inputargs['peer'] = str2loc(sys.argv[-2])
-    except StandardError:
-        pass
-    if 'port' not in inputargs:
+    (options, args) = parser.parse_args()
+    if not options.port:
         loc = ping_until_not_found(Location('localhost', DEFAULTPORT), 40)
-        inputargs['port'] = loc.port
-    if 'peer' not in inputargs:
+        options.port = loc.port
+    if options.peer:
+        options.peer = str2loc(options.peer)
+    else:
         try:
-            inputargs['peer'] = ping_until_found(Location('localhost', DEFAULTPORT))
+            options.peer = ping_until_found(Location('localhost', DEFAULTPORT))
         except NodeNotFound:
             print 'No peer autodiscovered.'
-    main(inputargs)
+    main(options.__dict__)
 
 
