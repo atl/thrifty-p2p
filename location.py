@@ -164,8 +164,8 @@ class LocatorHandler(Locator.Iface):
         self.add(location, [self.location])
         ping_until_return(location)
         items = self.ring.nodes.difference([loc2str(location)])
-        for item in items:
-            remote_call(location, 'add', str2loc(item), map(str2loc, self.ring.nodes))
+        # for item in items:
+        #     remote_call(location, 'add', str2loc(item), map(str2loc, self.ring.nodes))
     
     def remove(self, location, authorities):
         """
@@ -236,6 +236,7 @@ class LocatorHandler(Locator.Iface):
     def local_join(self):
         self.ring.append(self.here)
         if self.peer:
+            self.ring.extend(map(loc2str, remote_call(self.peer, 'get_all')))
             remote_call(self.peer, 'join', self.location)
             print 'Joining the network...'
         else:
