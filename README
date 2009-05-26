@@ -8,7 +8,7 @@ scaling.
 
 === Basic usage ===
 
-  python location.py [[peer_node] port_num]
+  python location.py [-h peer_node] [-p port_num] [--help]
 
 Initiates and/or joins a simple peer-to-peer network. Default port_num
 is 9900. Absent a peer_node (which is the peer initially contacted for
@@ -27,12 +27,13 @@ Example usage, in different terminal windows:
 
 The basic server uses consistent hashing via hash_ring.py, developed by
 Amir Salihefendic. For better and for worse, I modified the code to
-allow for easier node set manipulations and different node resolution
-behavior so that it's more trivially related to md5 hashes.
+allow for easier node set manipulations (as if it were a list) and 
+different node resolution behavior so that the internal keys are more 
+directly related to md5 hashes.
 
 The library requires the Apache Thrift Python libraries to be installed,
-but does not currently technically require the Thrift compiler or any
-other language libraries.
+but - because the thrift compiler has been run already - does not currently 
+require the Thrift compiler or any other language libraries.
 
 === Design priorities ===
 
@@ -52,8 +53,8 @@ for large scales, so don't get too excited about deploying this anywhere
 real. 
 
 Although diststore.thrift uses locator.thrift for a lot of its interfaces,
-the implementation overloads many of the base methods. Let's hope it ends
-up an informative example for either one of us. 
+the implementation overloads some of the base methods as an illustration 
+of how this simple library might be used in other projects.
 
 Example usage, run this in a couple terminal windows:
   python storeserver.py
@@ -63,9 +64,11 @@ Then in another window start populating the store:
   python storeput.py b banana
   python storeput.py c crayon
   python storeput.py d dinosaur
+  python storeprimer.py
 
 You can then query the store:
-  python storeget.py c
+  python storeget.py  c
+  python storetest.py
   
 or start a new server, and see how a minimum of the existing keys 
 redistribute themselves:

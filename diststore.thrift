@@ -28,14 +28,7 @@ THE SOFTWARE.
 
 include "locator.thrift"
 
-struct StarterPackage {
- 1: list<locator.Location> nodes,
- 2: map<string, string>    store,
-}
-
 service Store extends locator.Locator {
  string                 get     (1:string key)
  oneway void            put     (1:string key, 2:string value)
-# StarterPackage         join    (1:locator.Location location)
-# map<string, string>    add     (1:locator.Location location, 2:list<locator.Location> authorities)
 }
