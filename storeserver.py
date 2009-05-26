@@ -48,20 +48,19 @@ DEFAULTPORT = 9900
 WAITPERIOD = 0.01
 
 usage = '''
-  python %s [[peer] port]
+  python %prog [options]
 
-Starts a distributed key-value storage node on the designated port
-and contacting the designated peer. In the absence of these two, it 
-attempts to autodiscover an open port and a peer on localhost, working
-from the default port, %d.
+Starts a distributed key-value storage node on the designated PORT
+and contacting the designated PEER. In the absence of either of these
+two, it attempts to autodiscover an open port and a peer on localhost,
+working from the default port, 9900.
 
 After auto-joining, a node will receive key-value pairs from its 
 neighbors. When exiting cleanly (e.g., with a KeyboardInterrupt), the
-node hands off all its items to the appropriate neighbors.
+node hands off all its items to the appropriate neighbors.''' 
 
-Usage can be obtained with -h or --help as the first argument.
-''' % (sys.argv[0], DEFAULTPORT)
-
+parser = location.parser
+parser.set_usage(usage)
 
 def remote_call(destination, method, *args):
     transport = TSocket.TSocket(destination.address, destination.port)
@@ -193,23 +192,16 @@ def main(inputargs):
     print 'done.'
 
 if __name__ == '__main__':
-    inputargs = {}
-    try:
-        if '-h' in sys.argv[1]:
-            print usage
-            sys.exit()
-        inputargs['port'] = int(sys.argv[-1])
-        inputargs['peer'] = location.str2loc(sys.argv[-2])
-    except StandardError:
-        pass
-    if 'port' not in inputargs:
+    (options, args) = parser.parse_args()
+    if not options.port:
         loc = location.ping_until_not_found(Location('localhost', DEFAULTPORT), 25)
-        inputargs['port'] = loc.port
-    if 'peer' not in inputargs:
+        options.port = loc.port
+    if options.peer:
+        options.peer = location.str2loc(options.peer)
+    else:
         try:
-            loc = location.ping_until_found(Location('localhost', DEFAULTPORT))
-            inputargs['peer'] = loc
+            options.peer = location.ping_until_found(Location('localhost', DEFAULTPORT))
         except location.NodeNotFound:
             print 'No peer autodiscovered.'
-    main(inputargs)
+    main(options.__dict__)
 

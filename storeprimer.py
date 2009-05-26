@@ -32,16 +32,18 @@ import sys
 sys.path.append('gen-py')
 
 from locator.ttypes import Location
-from storeserver import remote_call, DEFAULTPORT
-from location import ping_until_found, loc2str, NodeNotFound
+from storeserver import remote_call, DEFAULTPORT, parser
+from location import ping_until_found, str2loc, NodeNotFound
 
 usage = '''
-  python storeprimer.py
+  python %prog
 
-Looks for a storage node on the localhost starting from 
-the default port. Sends the NATO alphabet to prime the 
-distributed store.
-'''
+Looks for a storage node at PEER, either as specified, or 
+auto-discovered on the localhost starting from the default 
+port. Sends the NATO alphabet to prime the distributed store.'''
+
+parser.set_usage(usage)
+parser.remove_option('--port')
 
 DICTIONARY = {
 'A': 'Alpha',
@@ -71,11 +73,16 @@ DICTIONARY = {
 'Y': 'Yankee',
 'Z': 'Zulu',
 }
+
 if __name__ == '__main__':
-    try:
-        loc = ping_until_found(Location('localhost', DEFAULTPORT))
-    except NodeNotFound:
-        print 'No host autodiscovered.'
-        sys.exit()
+    (options, args) = parser.parse_args()
+    if options.peer:
+        loc = str2loc(options.peer)
+    else:
+        try:
+            loc = ping_until_found(Location('localhost', DEFAULTPORT))
+        except NodeNotFound:
+            print 'No peer autodiscovered.'
+            sys.exit()
     for key, value in DICTIONARY.items():
         remote_call(loc, 'put', key, value)

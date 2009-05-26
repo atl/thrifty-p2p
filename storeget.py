@@ -32,28 +32,32 @@ import sys
 sys.path.append('gen-py')
 
 from locator.ttypes import Location
-from storeserver import remote_call, DEFAULTPORT
-from location import ping_until_found, loc2str, NodeNotFound
+from storeserver import remote_call, DEFAULTPORT, parser
+from location import ping_until_found, str2loc, NodeNotFound
 
 usage = '''
-  python storeget.py <key>
+  python %prog [options] <key>
 
-Looks for a storage node on the localhost starting from 
-the default port. Sends the remote command there, which 
-gets sent out to the actual node that has it. Returns the
-stored value for the key.
-'''
+Looks for a storage node at PEER, either as specified, or 
+auto-discovered on the localhost starting from the default 
+port. Sends the remote command there, which gets forwarded 
+to the actual node that has it.'''
+
+parser.set_usage(usage)
+parser.remove_option('--port')
 
 if __name__ == '__main__':
-    try:
-        key = sys.argv[1]
-    except:
-        print usage
-        sys.exit()
-    try:
-        loc = ping_until_found(Location('localhost', DEFAULTPORT))
-    except NodeNotFound:
-        print 'No host autodiscovered.'
-        sys.exit()
+    (options, args) = parser.parse_args()
+    if len(args) != 1:
+        parser.error("incorrect number of arguments")
+    (key,) = args
+    if options.peer:
+        loc = str2loc(options.peer)
+    else:
+        try:
+            loc = ping_until_found(Location('localhost', DEFAULTPORT))
+        except NodeNotFound:
+            print 'No peer autodiscovered.'
+            sys.exit()
     value = remote_call(loc, 'get', key)
     print value
