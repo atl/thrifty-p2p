@@ -35,6 +35,8 @@ from collections import defaultdict
 from math import sqrt
 from time import sleep
 from optparse import OptionParser, make_option
+from functools import partial
+
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -92,11 +94,11 @@ def str2loc(location):
     comp = location.rsplit(':', 1)
     return Location(comp[0], int(comp[1]))
 
-def remote_call(destination, method, *args):
+def generic_remote_call(clientclass, destination, method, *args):
     transport = TSocket.TSocket(destination.address, destination.port)
     transport = TTransport.TBufferedTransport(transport)
     protocol = TBinaryProtocol.TBinaryProtocol(transport)
-    client = Locator.Client(protocol)
+    client = clientclass(protocol)
     try:
         transport.open()
     except Thrift.TException, tx:
@@ -104,6 +106,8 @@ def remote_call(destination, method, *args):
     out = getattr(client, method)(*args)
     transport.close()
     return out
+
+remote_call = partial(generic_remote_call, Locator.Client)
 
 def select_peers(in_set):
     lst = sorted(in_set)
@@ -164,6 +168,23 @@ class LocatorHandler(Locator.Iface):
     def location(self):
         "Give the canonical Location"
         return Location(address=self.address, port=self.port)
+    
+    @classmethod
+    def service_type(cls):
+        return "Locator"
+    
+    @classmethod
+    def service_types(cls):
+        services = list()
+        print cls.__bases__
+        for base in cls.__bases__:
+            print base.__name__
+            try:
+                services.extend(base.service_types())
+            except:
+                pass
+        services.append(cls.service_type())
+        return services
     
     def join(self, location):
         """

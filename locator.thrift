@@ -38,5 +38,7 @@ service Locator {
  list<Location> get_all ()
  Location       get_node(1:string key)
  void           ping    ()
+ string         service_type ()
+ list<string>   service_types()
  oneway void    debug   ()
 }

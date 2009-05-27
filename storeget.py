@@ -59,5 +59,4 @@ if __name__ == '__main__':
         except NodeNotFound:
             print 'No peer autodiscovered.'
             sys.exit()
-    value = remote_call(loc, 'get', key)
-    print value
+    print remote_call(loc, 'get', key)

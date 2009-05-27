@@ -32,6 +32,7 @@ import sys
 sys.path.append('gen-py')
 from collections import defaultdict
 from time import sleep
+from functools import partial
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -62,23 +63,16 @@ node hands off all its items to the appropriate neighbors.'''
 parser = location.parser
 parser.set_usage(usage)
 
-def remote_call(destination, method, *args):
-    transport = TSocket.TSocket(destination.address, destination.port)
-    transport = TTransport.TBufferedTransport(transport)
-    protocol = TBinaryProtocol.TBinaryProtocol(transport)
-    client = Store.Client(protocol)
-    try:
-        transport.open()
-    except Thrift.TException, tx:
-        raise location.NodeNotFound(destination)
-    out = getattr(client, method)(*args)
-    transport.close()
-    return out
+remote_call = partial(location.generic_remote_call, Store.Client)
 
 class StoreHandler(location.LocatorHandler):
     def __init__(self, peer=None, port=9900):
         location.LocatorHandler.__init__(self, peer, port)
         self.store = defaultdict(str)
+    
+    @classmethod
+    def service_type(cls):
+        return "Diststore"
     
     def get(self, key):
         """

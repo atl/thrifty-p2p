@@ -27,6 +27,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '   get_all()'
   print '  Location get_node(string key)'
   print '  void ping()'
+  print '  string service_type()'
+  print '   service_types()'
   print '  void debug()'
   print ''
   sys.exit(0)
@@ -111,6 +113,18 @@ elif cmd == 'ping':
     print 'ping requires 0 args'
     sys.exit(1)
   pp.pprint(client.ping())
+
+elif cmd == 'service_type':
+  if len(args) != 0:
+    print 'service_type requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.service_type())
+
+elif cmd == 'service_types':
+  if len(args) != 0:
+    print 'service_types requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.service_types())
 
 elif cmd == 'debug':
   if len(args) != 0:
