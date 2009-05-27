@@ -81,4 +81,4 @@ if __name__ == '__main__':
     else:
         loc = find_matching_service(Location('localhost', DEFAULTPORT), SERVICENAME) or sys.exit()
     for key, value in DICTIONARY.items():
-        remote_call(loc, 'put', key, value)
+        remote_call('put', loc, key, value)

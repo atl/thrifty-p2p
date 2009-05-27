@@ -96,7 +96,7 @@ def str2loc(location):
     comp = location.rsplit(':', 1)
     return Location(comp[0], int(comp[1]))
 
-def generic_remote_call(clientclass, destination, method, *args):
+def generic_remote_call(clientclass, method, destination, *args):
     transport = TSocket.TSocket(destination.address, destination.port)
     transport = TTransport.TBufferedTransport(transport)
     protocol = TBinaryProtocol.TBinaryProtocol(transport)
@@ -110,6 +110,7 @@ def generic_remote_call(clientclass, destination, method, *args):
     return out
 
 remote_call = partial(generic_remote_call, Locator.Client)
+ping = partial(generic_remote_call, Base.Client, 'ping')
 
 def select_peers(in_set):
     lst = sorted(in_set)
@@ -119,7 +120,7 @@ def find_matching_service(location, service, maximum=10):
     loc = Location(location.address, location.port)
     for a in range(maximum):
         try:
-            if service == remote_call(loc, 'service_type'):
+            if service == remote_call('service_type', loc):
                 return loc
         except NodeNotFound:
             pass
@@ -131,7 +132,7 @@ def ping_until_found(location, maximum=10):
     loc = Location(location.address, location.port)
     for a in range(maximum):
         try:
-            remote_call(loc, 'ping')
+            ping(loc)
             return loc
         except NodeNotFound:
             loc.port += 1
@@ -141,7 +142,7 @@ def ping_until_not_found(location, maximum=10):
     loc = Location(location.address, location.port)
     for a in range(maximum):
         try:
-            remote_call(loc, 'ping')
+            ping(loc)
             loc.port += 1
         except NodeNotFound:
             return loc
@@ -152,7 +153,7 @@ def ping_until_return(location, maximum=10):
     wait = WAITPERIOD
     for a in range(maximum):
         try:
-            remote_call(loc, 'ping')
+            ping(loc)
             return
         except NodeNotFound:
             sleep(wait)
@@ -187,7 +188,7 @@ class LocatorHandler(BaseHandler, Locator.Iface):
         self.peer = peer
         self.ring = HashRing()
         try:
-            remote_call(self.location, 'ping')
+            ping(self.location)
             print 'Uh-oh. Our location responded to a ping!'
             raise socket.error(43, 'Address already in use')
         except NodeNotFound:
@@ -228,7 +229,7 @@ class LocatorHandler(BaseHandler, Locator.Iface):
         destinations = select_peers(self.ring.nodes.difference(map(loc2str,authorities)))
         for destination in destinations:
             try:
-                remote_call(str2loc(destination), 'remove', location, authorities)
+                remote_call('remove', str2loc(destination), location, authorities)
                 break
             except NodeNotFound, tx:
                 # enter all nodes as authorities to avoid race conditions
@@ -247,7 +248,7 @@ class LocatorHandler(BaseHandler, Locator.Iface):
         destinations = select_peers(self.ring.nodes.difference(map(loc2str,authorities)))
         for destination in destinations:
             try:
-                remote_call(str2loc(destination), 'add', location, authorities)
+                remote_call('add', str2loc(destination), location, authorities)
                 break
             except NodeNotFound, tx:
                 # enter all nodes as authorities to avoid race conditions
@@ -274,7 +275,7 @@ class LocatorHandler(BaseHandler, Locator.Iface):
         self.ring.remove(self.here)
         for node in select_peers(self.ring.nodes):
             try:
-                remote_call(str2loc(node), 'remove', self.location, [self.location])
+                remote_call('remove', str2loc(node), self.location, [self.location])
                 break
             except NodeNotFound, tx:
                 pass
@@ -282,8 +283,8 @@ class LocatorHandler(BaseHandler, Locator.Iface):
     def local_join(self):
         self.ring.append(self.here)
         if self.peer:
-            self.ring.extend(map(loc2str, remote_call(self.peer, 'get_all')))
-            remote_call(self.peer, 'join', self.location)
+            self.ring.extend(map(loc2str, remote_call('get_all', self.peer)))
+            remote_call('join', self.peer, self.location)
             print 'Joining the network...'
         else:
             print 'Initiating the network...'

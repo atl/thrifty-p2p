@@ -87,7 +87,7 @@ class StoreHandler(location.LocatorHandler):
             return self.store[key]
         else:
             try:
-                return remote_call(dest, 'get', key)
+                return remote_call('get', dest, key)
             except location.NodeNotFound, tx:
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
                 return ''
@@ -105,7 +105,7 @@ class StoreHandler(location.LocatorHandler):
             return
         else:
             try:
-                remote_call(dest, 'put', key, value)
+                remote_call('put', dest, key, value)
             except location.NodeNotFound, tx:
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
                 return
@@ -125,7 +125,7 @@ class StoreHandler(location.LocatorHandler):
         destinations = location.select_peers(self.ring.nodes.difference(map(location.loc2str,authorities)))
         for destination in destinations:
             try:
-                remote_call(location.str2loc(destination), 'add', loc, authorities)
+                remote_call('add', location.str2loc(destination), loc, authorities)
                 break
             except location.NodeNotFound, tx:
                 self.remove(tx.location, map(location.str2loc, self.ring.nodes))
@@ -134,7 +134,7 @@ class StoreHandler(location.LocatorHandler):
         sleep(WAITPERIOD)
         for key, value in self.store.items():
             if location.loc2str(self.get_node(key)) == locstr:
-                remote_call(loc, 'put', key, value)
+                remote_call('put', loc, key, value)
                 del self.store[key] 
                 print 'dropped %s' % key
         print "added %s:%d" % (loc.address, loc.port)
@@ -153,17 +153,17 @@ class StoreHandler(location.LocatorHandler):
                 dest = self.get_node(key)
                 try:
                     if location.loc2str(dest) not in informed:
-                        remote_call(dest, 'remove', self.location, [self.location])
-                    remote_call(dest, 'ping')
+                        remote_call('remove', dest, self.location, [self.location])
+                    remote_call('ping', dest)
                     informed.add(location.loc2str(dest))
-                    remote_call(dest, 'put', key, value)
+                    remote_call('put', dest, key, value)
                 except location.NodeNotFound, tx:
                     print "not found"
                     pass
             if not informed:
                 for dest in location.select_peers(self.ring.nodes):
                     try:
-                        remote_call(location.str2loc(dest), 'remove', self.location, [self.location])
+                        remote_call('remove', location.str2loc(dest), self.location, [self.location])
                         informed.add(dest)
                         break
                     except location.NodeNotFound, tx:

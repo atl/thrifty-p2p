@@ -54,8 +54,8 @@ if __name__ == '__main__':
     else:
         loc = find_matching_service(Location('localhost', DEFAULTPORT), SERVICENAME) or sys.exit()
     for key in KEYS:
-        value = remote_call(loc, 'get', key)
+        value = remote_call('get', loc, key)
         if value:
             print value
         else:
-            print "None received from expected %s" % remote_call(loc, 'get_node', key)
+            print "None received from expected %s" % remote_call('get_node', loc, key)

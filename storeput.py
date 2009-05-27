@@ -55,4 +55,4 @@ if __name__ == '__main__':
         loc = str2loc(options.peer)
     else:
         loc = find_matching_service(Location('localhost', DEFAULTPORT), SERVICENAME) or sys.exit()
-    remote_call(loc, 'put', key, value)
+    remote_call('put', loc, key, value)
