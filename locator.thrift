@@ -31,14 +31,17 @@ struct Location {
  2: i16 port,
 }
 
-service Locator {
+service Base {
+ void           ping         ()
+ string         service_type ()
+ list<string>   service_types()
+ oneway void    debug        ()
+}
+
+service Locator extends Base {
  oneway void    join    (1:Location location)
  oneway void    remove  (1:Location location, 2:list<Location> authorities)
  oneway void    add     (1:Location location, 2:list<Location> authorities)
  list<Location> get_all ()
  Location       get_node(1:string key)
- void           ping    ()
- string         service_type ()
- list<string>   service_types()
- oneway void    debug   ()
 }

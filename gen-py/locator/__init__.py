@@ -1,1 +1,1 @@
-__all__ = ['ttypes', 'constants', 'Locator']
+__all__ = ['ttypes', 'constants', 'Base', 'Locator']

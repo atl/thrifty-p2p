@@ -33,7 +33,7 @@ sys.path.append('gen-py')
 
 from locator.ttypes import Location
 from storeserver import remote_call, parser, DEFAULTPORT, SERVICENAME
-from location import find_matching_service, str2loc, NodeNotFound
+from location import find_matching_service, str2loc
 
 usage = '''
   python %prog

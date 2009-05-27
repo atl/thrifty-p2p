@@ -45,7 +45,7 @@ from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
 from locator.ttypes import *
-from locator import Locator
+from locator import Locator, Base
 from hash_ring import HashRing
 
 DEFAULTPORT = 9900
@@ -115,16 +115,6 @@ def select_peers(in_set):
     lst = sorted(in_set)
     return lst
 
-def ping_until_found(location, maximum=10):
-    loc = Location(location.address, location.port)
-    for a in range(maximum):
-        try:
-            remote_call(loc, 'ping')
-            return loc
-        except NodeNotFound:
-            loc.port += 1
-    raise NodeNotFound(loc)
-
 def find_matching_service(location, service, maximum=10):
     loc = Location(location.address, location.port)
     for a in range(maximum):
@@ -136,6 +126,16 @@ def find_matching_service(location, service, maximum=10):
         loc.port += 1
     print 'No peer autodiscovered.'
     return None
+
+def ping_until_found(location, maximum=10):
+    loc = Location(location.address, location.port)
+    for a in range(maximum):
+        try:
+            remote_call(loc, 'ping')
+            return loc
+        except NodeNotFound:
+            loc.port += 1
+    raise NodeNotFound(loc)
 
 def ping_until_not_found(location, maximum=10):
     loc = Location(location.address, location.port)
@@ -159,8 +159,28 @@ def ping_until_return(location, maximum=10):
             wait *= 2
             print wait
     raise NodeNotFound(loc)
+
+class BaseHandler(Base.Iface):
+    @classmethod
+    def service_type(cls):
+        return 'Base'
     
-class LocatorHandler(Locator.Iface):
+    @classmethod
+    def service_types(cls):
+        services = list()
+        for base in cls.__bases__:
+            try:
+                services.extend(base.service_types())
+            except:
+                pass
+        services.append(cls.service_type())
+        return services
+    
+    def ping(self):
+        print 'ping()'
+    
+
+class LocatorHandler(BaseHandler, Locator.Iface):
     def __init__(self, peer=None, port=9900):
         self.address = socket.gethostbyname(socket.gethostname())
         self.port = port
@@ -186,19 +206,6 @@ class LocatorHandler(Locator.Iface):
     @classmethod
     def service_type(cls):
         return SERVICENAME
-    
-    @classmethod
-    def service_types(cls):
-        services = list()
-        print cls.__bases__
-        for base in cls.__bases__:
-            print base.__name__
-            try:
-                services.extend(base.service_types())
-            except:
-                pass
-        services.append(cls.service_type())
-        return services
     
     def join(self, location):
         """
@@ -257,9 +264,6 @@ class LocatorHandler(Locator.Iface):
             return str2loc(self.ring.get_node(key))
         else:
             return Location('',0)
-    
-    def ping(self):
-        print 'ping()'
     
     def debug(self):
         a = "self.location: %r\n" % self.location
