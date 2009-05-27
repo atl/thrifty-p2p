@@ -50,6 +50,8 @@ from hash_ring import HashRing
 
 DEFAULTPORT = 9900
 WAITPERIOD = 0.01
+SERVICENAME = "Locator"
+
 usage = '''
   python %prog [options]
   
@@ -123,6 +125,18 @@ def ping_until_found(location, maximum=10):
             loc.port += 1
     raise NodeNotFound(loc)
 
+def find_matching_service(location, service, maximum=10):
+    loc = Location(location.address, location.port)
+    for a in range(maximum):
+        try:
+            if service == remote_call(loc, 'service_type'):
+                return loc
+        except NodeNotFound:
+            pass
+        loc.port += 1
+    print 'No peer autodiscovered.'
+    return None
+
 def ping_until_not_found(location, maximum=10):
     loc = Location(location.address, location.port)
     for a in range(maximum):
@@ -171,7 +185,7 @@ class LocatorHandler(Locator.Iface):
     
     @classmethod
     def service_type(cls):
-        return "Locator"
+        return SERVICENAME
     
     @classmethod
     def service_types(cls):
@@ -297,10 +311,7 @@ if __name__ == '__main__':
     if options.peer:
         options.peer = str2loc(options.peer)
     else:
-        try:
-            options.peer = ping_until_found(Location('localhost', DEFAULTPORT))
-        except NodeNotFound:
-            print 'No peer autodiscovered.'
+        options.peer = find_matching_service(Location('localhost', DEFAULTPORT), SERVICENAME)
     main(options.__dict__)
 
 

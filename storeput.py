@@ -32,8 +32,8 @@ import sys
 sys.path.append('gen-py')
 
 from locator.ttypes import Location
-from storeserver import remote_call, DEFAULTPORT, parser
-from location import ping_until_found, str2loc, NodeNotFound
+from storeserver import remote_call, parser, DEFAULTPORT, SERVICENAME
+from location import find_matching_service, str2loc, NodeNotFound
 
 usage = '''
   python %prog [options] <key> <value>
@@ -54,9 +54,5 @@ if __name__ == '__main__':
     if options.peer:
         loc = str2loc(options.peer)
     else:
-        try:
-            loc = ping_until_found(Location('localhost', DEFAULTPORT))
-        except NodeNotFound:
-            print 'No peer autodiscovered.'
-            sys.exit()
+        loc = find_matching_service(Location('localhost', DEFAULTPORT), SERVICENAME) or sys.exit()
     remote_call(loc, 'put', key, value)

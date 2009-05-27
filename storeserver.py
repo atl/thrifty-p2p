@@ -47,6 +47,7 @@ import location
 
 DEFAULTPORT = 9900
 WAITPERIOD = 0.01
+SERVICENAME = "Diststore"
 
 usage = '''
   python %prog [options]
@@ -72,7 +73,7 @@ class StoreHandler(location.LocatorHandler):
     
     @classmethod
     def service_type(cls):
-        return "Diststore"
+        return SERVICENAME
     
     def get(self, key):
         """
@@ -193,9 +194,6 @@ if __name__ == '__main__':
     if options.peer:
         options.peer = location.str2loc(options.peer)
     else:
-        try:
-            options.peer = location.ping_until_found(Location('localhost', DEFAULTPORT))
-        except location.NodeNotFound:
-            print 'No peer autodiscovered.'
+        options.peer = location.find_matching_service(Location('localhost', DEFAULTPORT), SERVICENAME)
     main(options.__dict__)
 
