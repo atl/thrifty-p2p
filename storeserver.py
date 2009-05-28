@@ -47,7 +47,7 @@ import location
 
 DEFAULTPORT = 9900
 WAITPERIOD = 0.01
-SERVICENAME = "Diststore"
+SERVICENAME = "diststore.Store"
 
 usage = '''
   python %prog [options]
@@ -66,14 +66,10 @@ parser.set_usage(usage)
 
 remote_call = partial(location.generic_remote_call, Store.Client)
 
-class StoreHandler(location.LocatorHandler):
+class StoreHandler(location.LocatorHandler, Store.Iface):
     def __init__(self, peer=None, port=9900):
         location.LocatorHandler.__init__(self, peer, port)
         self.store = defaultdict(str)
-    
-    @classmethod
-    def service_type(cls):
-        return SERVICENAME
     
     def get(self, key):
         """

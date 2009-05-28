@@ -50,7 +50,7 @@ from hash_ring import HashRing
 
 DEFAULTPORT = 9900
 WAITPERIOD = 0.01
-SERVICENAME = "Locator"
+SERVICENAME = "locator.Locator"
 
 usage = '''
   python %prog [options]
@@ -164,7 +164,10 @@ def ping_until_return(location, maximum=10):
 class BaseHandler(Base.Iface):
     @classmethod
     def service_type(cls):
-        return 'Base'
+        for base in cls.__bases__:
+            if base.__name__ == 'Iface':
+                return base.__module__
+        return ''
     
     @classmethod
     def service_types(cls):
@@ -206,10 +209,6 @@ class LocatorHandler(BaseHandler, Locator.Iface):
     def location(self):
         "Give the canonical Location"
         return Location(address=self.address, port=self.port)
-    
-    @classmethod
-    def service_type(cls):
-        return SERVICENAME
     
     def join(self, location):
         """
