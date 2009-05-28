@@ -28,6 +28,9 @@ class Iface:
   def debug(self, ):
     pass
 
+  def die(self, ):
+    pass
+
 
 class Client(Iface):
   def __init__(self, iprot, oprot=None):
@@ -118,6 +121,15 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
+  def die(self, ):
+    self.send_die()
+
+  def send_die(self, ):
+    self._oprot.writeMessageBegin('die', TMessageType.CALL, self._seqid)
+    args = die_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
 
 class Processor(Iface, TProcessor):
   def __init__(self, handler):
@@ -127,6 +139,7 @@ class Processor(Iface, TProcessor):
     self._processMap["service_type"] = Processor.process_service_type
     self._processMap["service_types"] = Processor.process_service_types
     self._processMap["debug"] = Processor.process_debug
+    self._processMap["die"] = Processor.process_die
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -181,6 +194,13 @@ class Processor(Iface, TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     self._handler.debug()
+    return
+
+  def process_die(self, seqid, iprot, oprot):
+    args = die_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    self._handler.die()
     return
 
 
@@ -480,6 +500,44 @@ class debug_args(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('debug_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class die_args(object):
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('die_args')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 

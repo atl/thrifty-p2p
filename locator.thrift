@@ -36,6 +36,7 @@ service Base {
  string         service_type ()
  list<string>   service_types()
  oneway void    debug        ()
+ oneway void    die          ()
 }
 
 service Locator extends Base {

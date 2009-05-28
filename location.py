@@ -180,6 +180,9 @@ class BaseHandler(Base.Iface):
     def ping(self):
         print 'ping()'
     
+    def die(self):
+        raise KeyboardInterrupt
+    
 
 class LocatorHandler(BaseHandler, Locator.Iface):
     def __init__(self, peer=None, port=9900):
