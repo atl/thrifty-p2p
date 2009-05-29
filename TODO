@@ -1,0 +1,5 @@
+Ideas for the future:
+ - inject some methods into the Location type, e.g.:
+    - creation from string
+    - output to string
+    - simple maths affecting portnum (e.g., __add__ )

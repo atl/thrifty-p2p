@@ -1,0 +1,105 @@
+# thrifty-p2p #
+
+A very simple p2p python implementation using the [Thrift][] 
+protocol and its basic RPC capabilities. It is not expected to be 
+generically usable by arbitrary projects: thrifty-p2p implements a 
+flat network, which is justifiable for the author's purposes, but will
+encounter trouble scaling.
+
+[Thrift]: http://incubator.apache.org/thrift/
+
+## Basic usage ##
+
+    python location.py [-h peer_node] [-p port_num] [--help]
+
+Initiates and/or joins a simple peer-to-peer network. Default port\_num
+is 9900. Absent a peer\_node (which is the peer initially contacted for
+joining the network), the command initiates a network.
+
+Example usage, in different terminal windows:
+
+    python location.py
+
+    python location.py --host localhost:9900 --port 9901
+
+    python location.py -h localhost:9901 -p 9902
+  
+... etc. ...
+
+## Dependencies & Requirements ##
+
+The basic server uses consistent hashing via [hash_ring.py][], developed by
+[Amir Salihefendic][]. For better and for worse, I modified the code to
+allow for easier node set manipulations (as if it were a list) and 
+different node resolution behavior so that the internal keys are more 
+directly related to md5 hashes.
+
+The library requires the [Apache Thrift][] [Python libraries][] to be
+installed, but -- because the thrift compiler has been run already -- does 
+not currently require the Thrift compiler or any other language libraries.
+
+[hash_ring.py]: http://pypi.python.org/pypi/hash_ring/
+[Amir Salihefendic]: http://amix.dk/blog/viewEntry/19367
+[Apache Thrift]: http://incubator.apache.org/thrift/
+[python libraries]: http://pypi.python.org/pypi/thrift/1.0
+
+## Design priorities ##
+
+I'm using [Thrift][] as much for its simple RPC underpinnings as the message
+format. I wanted to consistently distribute some processing and bother
+as little as possible with node lookup. This is the simplest thing that
+I came up with that sort-of works: a flat peer-to-peer network with each
+node keeping up with the state of all the nodes as well as it can. This
+necessarily limits the ring's ability to scale beyond dozens of nodes.
+
+# diststore #
+
+Diststore is an example of an application that can be layered atop the
+thrifty-p2p location service. It's a toy version of a distributed key-value
+store of the sort that all the cool kids are doing these days. It makes no 
+attempt to optimize for large scales, so don't get too excited about deploying
+this in production. Rather, it's provided for instruction and testing.
+
+Although diststore.thrift uses locator.thrift for a lot of its interfaces,
+the implementation overloads some of the base methods as an illustration 
+of how this simple library might be used in other projects.
+
+Example usage, run this in a couple terminal windows:
+
+    python storeserver.py
+  
+Then in another window start populating the store:
+
+    python storeput.py a apple
+    python storeput.py b banana
+    python storeput.py c crayon
+    python storeput.py d dinosaur
+    python storeprimer.py
+
+You can then query the store:
+
+    python storeget.py  c
+    python storetest.py
+  
+or start a new server, and see how a minimum of the existing keys 
+redistribute themselves:
+
+    python storeserver.py
+  
+or even stop a server with ctrl-C or a `kill -INT` signal and see 
+how the server hands its items off gracefully. However, the system 
+is not robust to any more aggressive termination: keys will go missing.
+
+## Programming usage ##
+
+There are two primary thrift interfaces exposed in locator.thrift,
+locator.Base and locator.Locator. Locator.Base supports primal methods
+such as ping(), service\_type(), service\_types(), and die(), that don't
+rely on any of the locator services. Locator.Locator implements basic 
+node location and management: propagating and dropping services on the
+network. When creating your own thrift definition, your service
+should import locator.thrift and extend one of the two service classes.
+
+When creating a thrift handler implementation, the python class should 
+inherit from location.BaseHandler or location.LocatorHandler and the 
+Iface stub from your own class generated from your thrift file.
