@@ -1,10 +1,11 @@
 # thrifty-p2p #
 
-A very simple p2p python implementation using the [Thrift][] 
-protocol and its basic RPC capabilities. It is not expected to be 
-generically usable by arbitrary projects: thrifty-p2p implements a 
-flat network, which is justifiable for the author's purposes, but will
-encounter trouble scaling.
+A very simple peer-to-peer implementation using consistent hashing, the
+[Thrift][] protocol and its basic RPC capabilities. It is not expected to be
+generically usable by arbitrary projects: thrifty-p2p implements a flat
+network, which is justifiable for the author's purposes (distributing
+processing amongst dozens of data-rich nodes), but will encounter trouble
+scaling.
 
 [Thrift]: http://incubator.apache.org/thrift/
 
@@ -38,10 +39,10 @@ The library requires the [Apache Thrift][] [Python libraries][] to be
 installed, but -- because the thrift compiler has been run already -- does 
 not currently require the Thrift compiler or any other language libraries.
 
-[hash_ring.py]: http://pypi.python.org/pypi/hash_ring/
-[Amir Salihefendic]: http://amix.dk/blog/viewEntry/19367
-[Apache Thrift]: http://incubator.apache.org/thrift/
-[python libraries]: http://pypi.python.org/pypi/thrift/1.0
+[hash_ring.py]:         http://pypi.python.org/pypi/hash_ring/
+[Amir Salihefendic]:    http://amix.dk/blog/viewEntry/19367
+[Apache Thrift]:        http://incubator.apache.org/thrift/
+[python libraries]:     http://pypi.python.org/pypi/thrift/1.0
 
 ## Design priorities ##
 
@@ -56,9 +57,10 @@ necessarily limits the ring's ability to scale beyond dozens of nodes.
 
 Diststore is an example of an application that can be layered atop the
 thrifty-p2p location service. It's a toy version of a distributed key-value
-store of the sort that all the cool kids are doing these days. It makes no 
-attempt to optimize for large scales, so don't get too excited about deploying
-this in production. Rather, it's provided for instruction and testing.
+store of the sort that all the cool kids are doing these days. The underlying
+peer-to-peer implementation makes no attempt to optimize for large scales, so
+don't get too excited about deploying this in production. Rather, it's
+provided for instruction and testing.
 
 Although diststore.thrift uses locator.thrift for a lot of its interfaces,
 the implementation overloads some of the base methods as an illustration 
@@ -67,7 +69,9 @@ of how this simple library might be used in other projects.
 Example usage, run this in a couple terminal windows:
 
     python storeserver.py
-  
+
+Note how the second and following servers auto-discover the other servers
+you've initiated, join them as peers on the network, and find an open port.
 Then in another window start populating the store:
 
     python storeput.py a apple
@@ -78,17 +82,22 @@ Then in another window start populating the store:
 
 You can then query the store:
 
-    python storeget.py  c
+    python storeget.py c
     python storetest.py
   
 or start a new server, and see how a minimum of the existing keys 
-redistribute themselves:
+redistribute themselves and an example of consistent hashing:
 
     python storeserver.py
   
 or even stop a server with ctrl-C or a `kill -INT` signal and see 
 how the server hands its items off gracefully. However, the system 
 is not robust to any more aggressive termination: keys will go missing.
+
+What's happening here? Because every node has a full model of the network, it
+knows which node to forward a `get()` request to, or where to hand off its
+items when it leaves the network. Key methods here are overridden from
+location.LocatorHandler: `add()` and `cleanup()`.
 
 ## Programming usage ##
 

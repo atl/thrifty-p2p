@@ -188,7 +188,7 @@ class BaseHandler(Base.Iface):
     
 
 class LocatorHandler(BaseHandler, Locator.Iface):
-    def __init__(self, peer=None, port=9900):
+    def __init__(self, peer=None, port=DEFAULTPORT):
         self.address = socket.gethostbyname(socket.gethostname())
         self.port = port
         self.peer = peer
