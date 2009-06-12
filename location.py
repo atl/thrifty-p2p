@@ -153,8 +153,7 @@ def ping_until_return(location, maximum=10):
     wait = WAITPERIOD
     for a in range(maximum):
         try:
-            ping(loc)
-            return
+            return ping(loc)
         except NodeNotFound:
             sleep(wait)
             wait *= 2

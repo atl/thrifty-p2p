@@ -101,13 +101,13 @@ location.LocatorHandler: `add()` and `cleanup()`.
 
 ## Programming usage ##
 
-There are two primary thrift interfaces exposed in locator.thrift,
-locator.Base and locator.Locator. Locator.Base supports primal methods
-such as ping(), service\_type(), service\_types(), and die(), that don't
-rely on any of the locator services. Locator.Locator implements basic 
+There are two primary thrift interfaces exposed in locator.thrift:
+`locator.Base` and `locator.Locator`. `Locator.Base` supports primal methods
+such as `ping()`, `service\_type()`, `service\_types()`, and `die()`, that
+don't rely on any of the locator services. `Locator.Locator` implements basic
 node location and management: propagating and dropping services on the
-network. When creating your own thrift definition, your service
-should import locator.thrift and extend one of the two service classes.
+network. When creating your own thrift definition, your service should import
+locator.thrift and extend one of the two service classes.
 
 When creating a thrift handler implementation, the python class should 
 inherit from location.BaseHandler or location.LocatorHandler and the 
